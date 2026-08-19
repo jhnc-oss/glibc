@@ -261,6 +261,12 @@ elf_machine_plt_value (struct link_map *map, const Elf32_Rela *reloc,
 #define ARCH_LA_PLTENTER ppc32_gnu_pltenter
 #define ARCH_LA_PLTEXIT ppc32_gnu_pltexit
 
+/* Call _dl_signal_error when a resolved value overflows a relocated area.  */
+extern void attribute_hidden _dl_reloc_overflow (struct link_map *map,
+						 const char *name,
+						 ElfW(Addr) *const reloc_addr,
+						 const ElfW(Sym) *refsym);
+
 #endif /* dl_machine_h */
 
 #ifdef RESOLVE_MAP
@@ -276,12 +282,6 @@ extern void __process_machine_rela (struct link_map *map,
 				    Elf32_Addr finaladdr,
 				    int rinfo, bool skip_ifunc)
   attribute_hidden;
-
-/* Call _dl_signal_error when a resolved value overflows a relocated area.  */
-extern void _dl_reloc_overflow (struct link_map *map,
-				const char *name,
-				Elf32_Addr *const reloc_addr,
-				const Elf32_Sym *refsym) attribute_hidden;
 
 /* Perform the relocation specified by RELOC and SYM (which is fully resolved).
    LOADADDR is the load address of the object; INFO is an array indexed

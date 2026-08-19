@@ -590,6 +590,12 @@ ppc_init_fake_thread_pointer (void)
   ppc_init_fake_thread_pointer ();
 #endif /* ENABLE_STATIC_PIE && !defined SHARED && !IS_IN (rtld) */
 
+/* Call _dl_signal_error when a resolved value overflows a relocated area.  */
+extern void attribute_hidden _dl_reloc_overflow (struct link_map *map,
+						 const char *name,
+						 ElfW(Addr) *const reloc_addr,
+						 const ElfW(Sym) *refsym);
+
 #endif /* dl_machine_h */
 
 #ifdef RESOLVE_MAP
@@ -605,11 +611,6 @@ ppc_init_fake_thread_pointer (void)
   ((var) = ((var) & ~(Elf64_Addr) (mask)) | ((val) & (mask)))
 
 #define dont_expect(X) __builtin_expect ((X), 0)
-
-extern void attribute_hidden _dl_reloc_overflow (struct link_map *map,
-						 const char *name,
-						 Elf64_Addr *const reloc_addr,
-						 const Elf64_Sym *refsym);
 
 static inline void __attribute__ ((always_inline))
 elf_machine_rela_relative (Elf64_Addr l_addr, const Elf64_Rela *reloc,
