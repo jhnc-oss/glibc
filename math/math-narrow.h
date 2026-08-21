@@ -28,7 +28,19 @@
 #include <math_private.h>
 #include <fenv_private.h>
 #include <math-narrow-alias.h>
+#include <math-narrow-tininess.h>
+#include <float.h>
 #include <stdbool.h>
+
+/* The smallest positive normal value of TYPE, for CHECK_NARROW_TINY.
+   Selected at compile time; the generic CHECK_NARROW_TINY ignores its
+   arguments, so this expands to nothing on architectures that determine
+   tininess as IEEE 754 describes it.  */
+#define NARROW_MIN_NORMAL(TYPE)						\
+  __builtin_choose_expr							\
+    (__builtin_types_compatible_p (TYPE, float), FLT_MIN,		\
+     __builtin_choose_expr						\
+       (__builtin_types_compatible_p (TYPE, double), DBL_MIN, LDBL_MIN))
 
 /* Carry out a computation using round-to-odd.  The computation is
    EXPR; the union type in which to store the result is UNION and the
@@ -97,8 +109,12 @@
       if ((X) == -(Y))							\
 	ret = (TYPE) ((X) + (Y));					\
       else								\
-	ret = (TYPE) ROUND_TO_ODD (math_opt_barrier (X) + (Y),		\
-				   UNION, SUFFIX, MANTISSA, false);	\
+	{								\
+	  __typeof (X) w = ROUND_TO_ODD (math_opt_barrier (X) + (Y),	\
+					 UNION, SUFFIX, MANTISSA, false); \
+	  ret = (TYPE) w;						\
+	  CHECK_NARROW_TINY (ret, w, NARROW_MIN_NORMAL (TYPE));		\
+	}								\
 									\
       CHECK_NARROW_ADD (ret, (X), (Y));					\
       return ret;							\
@@ -155,8 +171,12 @@
       if ((X) == (Y))							\
 	ret = (TYPE) ((X) - (Y));					\
       else								\
-	ret = (TYPE) ROUND_TO_ODD (math_opt_barrier (X) - (Y),		\
-				   UNION, SUFFIX, MANTISSA, false);	\
+	{								\
+	  __typeof (X) w = ROUND_TO_ODD (math_opt_barrier (X) - (Y),	\
+					 UNION, SUFFIX, MANTISSA, false); \
+	  ret = (TYPE) w;						\
+	  CHECK_NARROW_TINY (ret, w, NARROW_MIN_NORMAL (TYPE));		\
+	}								\
 									\
       CHECK_NARROW_SUB (ret, (X), (Y));					\
       return ret;							\
@@ -209,9 +229,11 @@
     {									\
       TYPE ret;								\
 									\
-      ret = (TYPE) ROUND_TO_ODD (math_opt_barrier (X) * (Y),		\
-				 UNION, SUFFIX, MANTISSA,		\
-				 CLEAR_UNDERFLOW);			\
+      __typeof (X) w = ROUND_TO_ODD (math_opt_barrier (X) * (Y),	\
+				     UNION, SUFFIX, MANTISSA,		\
+				     CLEAR_UNDERFLOW);			\
+      ret = (TYPE) w;							\
+      CHECK_NARROW_TINY (ret, w, NARROW_MIN_NORMAL (TYPE));		\
 									\
       CHECK_NARROW_MUL (ret, (X), (Y));					\
       return ret;							\
@@ -264,9 +286,11 @@
     {									\
       TYPE ret;								\
 									\
-      ret = (TYPE) ROUND_TO_ODD (math_opt_barrier (X) / (Y),		\
-				 UNION, SUFFIX, MANTISSA,		\
-				 CLEAR_UNDERFLOW);			\
+      __typeof (X) w = ROUND_TO_ODD (math_opt_barrier (X) / (Y),	\
+				     UNION, SUFFIX, MANTISSA,		\
+				     CLEAR_UNDERFLOW);			\
+      ret = (TYPE) w;							\
+      CHECK_NARROW_TINY (ret, w, NARROW_MIN_NORMAL (TYPE));		\
 									\
       CHECK_NARROW_DIV (ret, (X), (Y));					\
       return ret;							\
@@ -371,7 +395,10 @@
       if (tmp == 0)							\
 	ret = (TYPE) (math_opt_barrier (X) * (Y) + (Z));		\
       else								\
-	ret = (TYPE) tmp;						\
+	{								\
+	  ret = (TYPE) tmp;						\
+	  CHECK_NARROW_TINY (ret, tmp, NARROW_MIN_NORMAL (TYPE));	\
+	}								\
 									\
       CHECK_NARROW_FMA (ret, (X), (Y), (Z));				\
       return ret;							\

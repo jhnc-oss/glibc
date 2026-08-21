@@ -21,7 +21,23 @@
 #include <fenv.h>
 #include <libm-alias-float.h>
 #include <math-use-builtins.h>
+#include <math-narrow-tininess.h>
+#include <float.h>
 #include "math_config.h"
+
+#if ! USE_FMAF_BUILTIN
+/* Narrow the double result to float.  The conversion is what raises
+   underflow, so architectures that do not determine tininess as IEEE 754
+   describes it compensate here; elsewhere CHECK_NARROW_TINY does
+   nothing and this is a plain conversion.  */
+static inline float
+narrow_fmaf_result (double result)
+{
+  float ret = (float) result;
+  CHECK_NARROW_TINY (ret, result, FLT_MIN);
+  return ret;
+}
+#endif
 
 float
 __fmaf (float x, float y, float z)
@@ -37,17 +53,17 @@ __fmaf (float x, float y, float z)
   /* If not exact or at round to even boundary, the result is correct in
      all rounding modes.  */
   if (__glibc_likely ((u & 0xfffffff) != 0))
-    return result;
+    return narrow_fmaf_result (result);
 
   /* Also check if the double result appears exact when it might not be and
      thus it will not set the underflow flag if denormal.  */
   if ((u & 0x10000000) == 0
       && ((u >> MANTISSA_WIDTH) & 0x7ff) > EXPONENT_BIAS - 126)
-    return result;
+    return narrow_fmaf_result (result);
 
   /* Return if result is exact in all rounding modes.  */
   if (result - xy == z && result - z == xy)
-    return result;
+    return narrow_fmaf_result (result);
 
   /* This is where 'double-rouding' might return a wrong value, and thus
      needs adjusting the low-order bits in the direction of the error.  */
@@ -62,7 +78,7 @@ __fmaf (float x, float y, float z)
     u++;
   else
     u--;
-  return asdouble (u);
+  return narrow_fmaf_result (asdouble (u));
 #endif /* ! USE_FMAF_BUILTIN  */
 }
 #ifndef __fmaf
