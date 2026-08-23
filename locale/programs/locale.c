@@ -429,10 +429,21 @@ write_locales (void)
 #define GET(name) tfind (name, &all_data, \
 			   (int (*) (const void *, const void *)) strcoll)
 
+/* Insert a copy of NAME into the tree, unless an equal string is already
+   present.  Only allocates when the name is actually new.  */
+#define PUT_UNIQUE(name) \
+  do \
+    { \
+      const char *put_name_ = (name); \
+      if (GET (put_name_) == NULL) \
+	PUT (xstrdup (put_name_)); \
+    } \
+  while (0)
+
   /* `POSIX' locale is always available (POSIX.2 4.34.3).  */
-  PUT ("POSIX");
+  PUT_UNIQUE ("POSIX");
   /* And so is the "C" locale.  */
-  PUT ("C");
+  PUT_UNIQUE ("C");
 
   memset (linebuf, '-', sizeof (linebuf) - 1);
   linebuf[sizeof (linebuf) - 1] = '\0';
@@ -510,8 +521,9 @@ write_locales (void)
 
 	  /* If the verbose format is not selected we simply
 	     collect the names.  */
-	  PUT (xstrdup (dirents[cnt]->d_name));
+	  PUT_UNIQUE (dirents[cnt]->d_name);
 	}
+      free (dirents[cnt]);
     }
   if (ndirents > 0)
     free (dirents);
@@ -591,7 +603,7 @@ write_locales (void)
 
 		  /* Add the alias.  */
 		  if (! verbose && GET (value) != NULL)
-		    PUT (xstrdup (alias));
+		    PUT_UNIQUE (alias);
 		}
 	    }
 
@@ -610,10 +622,14 @@ write_locales (void)
       fclose (fp);
     }
 
+  free (alias_path);
+
   if (! verbose)
     {
       twalk (all_data, print_names);
     }
+
+  tdestroy (all_data, free);
 }
 
 
@@ -669,7 +685,7 @@ write_archive_locales (void **all_datap, char *linebuf)
       for (cnt = 0; cnt < head->namehash_size; ++cnt)
 	if (namehashtab[cnt].locrec_offset != 0)
 	  {
-	    PUT (xstrdup (addr + namehashtab[cnt].name_offset));
+	    PUT_UNIQUE (addr + namehashtab[cnt].name_offset);
 	    ++ret;
 	  }
     }
@@ -694,7 +710,7 @@ write_archive_locales (void **all_datap, char *linebuf)
 	{
 	  struct locrecent *locrec;
 
-	  PUT (xstrdup (names[cnt].name));
+	  PUT_UNIQUE (names[cnt].name);
 
 	  if (cnt)
 	    putchar_unlocked ('\n');
@@ -744,19 +760,19 @@ write_charmaps (void)
       char **aliases;
       char **p;
 
-      PUT (xstrdup (dirent));
+      PUT_UNIQUE (dirent);
 
       aliases = charmap_aliases (CHARMAP_PATH, dirent);
 
 #if 0
       /* Add the code_set_name and the aliases.  */
       for (p = aliases; *p; p++)
-	PUT (xstrdup (*p));
+	PUT_UNIQUE (*p);
 #else
       /* Add the code_set_name only.  Most aliases are obsolete.  */
       p = aliases;
       if (*p)
-	PUT (xstrdup (*p));
+	PUT_UNIQUE (*p);
 #endif
 
       charmap_free_aliases (aliases);
@@ -765,6 +781,8 @@ write_charmaps (void)
   charmap_closedir (dir);
 
   twalk (all_data, print_names);
+
+  tdestroy (all_data, free);
 }
 
 /* Print a properly quoted assignment of NAME with VAL, using double
