@@ -218,6 +218,11 @@ The supported processor features are:
 @code{APX_F} -- The APX instruction extensions.
 
 @item
+@code{APX_NCI_NDD_NF} -- The instruction extensions with APX new
+conditional instructions (NCI), explicit new data destination (NDD)
+controls, and explicit flags suppression (NF).
+
+@item
 @code{ARCH_CAPABILITIES} -- IA32_ARCH_CAPABILITIES MSR.
 
 @item

@@ -32,7 +32,8 @@ enum
   CPUID_INDEX_19,
   CPUID_INDEX_14_ECX_0,
   CPUID_INDEX_24_ECX_0,
-  CPUID_INDEX_24_ECX_1
+  CPUID_INDEX_24_ECX_1,
+  CPUID_INDEX_29_ECX_0
 };
 
 struct cpuid_feature
@@ -345,4 +346,10 @@ enum
 
   x86_cpu_AVX10_V1_AUX		= x86_cpu_index_24_ecx_1_ecx + 2,
   x86_cpu_AVX10_V2_AUX		= x86_cpu_index_24_ecx_1_ecx + 3,
+
+  x86_cpu_index_29_ecx_0_ebx
+    = (CPUID_INDEX_29_ECX_0 * 8 * 4 * sizeof (unsigned int)
+       + cpuid_register_index_ebx * 8 * sizeof (unsigned int)),
+
+  x86_cpu_APX_NCI_NDD_NF	= x86_cpu_index_29_ecx_0_ebx,
 };

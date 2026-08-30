@@ -224,6 +224,7 @@ do_test (void)
   CHECK_CPU_FEATURE_PRESENT (AESKLE);
   CHECK_CPU_FEATURE_PRESENT (WIDE_KL);
   CHECK_CPU_FEATURE_PRESENT (PTWRITE);
+  CHECK_CPU_FEATURE_PRESENT (APX_NCI_NDD_NF);
 
   printf ("Possible CPU features:\n");
   CHECK_CPU_FEATURE_ACTIVE (SSE3);
@@ -397,6 +398,7 @@ do_test (void)
   CHECK_CPU_FEATURE_ACTIVE (AESKLE);
   CHECK_CPU_FEATURE_ACTIVE (WIDE_KL);
   CHECK_CPU_FEATURE_ACTIVE (PTWRITE);
+  CHECK_CPU_FEATURE_ACTIVE (APX_NCI_NDD_NF);
 
   unsigned int version = x86_get_avx10_version ();
   printf ("AVX10 version: %d\n", version);

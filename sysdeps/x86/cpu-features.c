@@ -396,6 +396,19 @@ update_active (struct cpu_features *cpu_features)
 		}
 	    }
 	}
+
+      if (cpu_features->basic.max_cpuid >= 0x29)
+	{
+	  __cpuid_count
+	    (0x29, 0,
+	     cpu_features->features[CPUID_INDEX_29_ECX_0].cpuid.eax,
+	     cpu_features->features[CPUID_INDEX_29_ECX_0].cpuid.ebx,
+	     cpu_features->features[CPUID_INDEX_29_ECX_0].cpuid.ecx,
+	     cpu_features->features[CPUID_INDEX_29_ECX_0].cpuid.edx);
+
+	  if (CPU_FEATURE_ACTIVE_P (cpu_features, APX_F))
+	    CPU_FEATURE_SET_ACTIVE (cpu_features, APX_NCI_NDD_NF);
+	}
     }
 
   /* Determine if PKU is usable.  */
