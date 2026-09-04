@@ -155,18 +155,11 @@ update_active (struct cpu_features *cpu_features)
   CPU_FEATURE_SET_ACTIVE (cpu_features, SHSTK);
 #endif
 
-  enum
-  {
-    os_xmm = 1,
-    os_ymm = 2,
-    os_zmm = 4
-  } os_vector_size = os_xmm;
   /* Can we call xgetbv?  */
   if (CPU_FEATURES_CPU_P (cpu_features, OSXSAVE))
     {
       unsigned int xcrlow;
       unsigned int xcrhigh;
-      CPU_FEATURE_SET_ACTIVE (cpu_features, AVX10);
       asm ("xgetbv" : "=a" (xcrlow), "=d" (xcrhigh) : "c" (0));
       /* Is YMM and XMM state usable?  */
       if ((xcrlow & (bit_YMM_state | bit_XMM_state))
@@ -175,7 +168,6 @@ update_active (struct cpu_features *cpu_features)
 	  /* Determine if AVX is usable.  */
 	  if (CPU_FEATURES_CPU_P (cpu_features, AVX))
 	    {
-	      os_vector_size |= os_ymm;
 	      CPU_FEATURE_SET (cpu_features, AVX);
 	      /* The following features depend on AVX being usable.  */
 	      /* Determine if AVX2 is usable.  */
@@ -214,7 +206,7 @@ update_active (struct cpu_features *cpu_features)
 			 | bit_ZMM16_31_state))
 	      == (bit_Opmask_state | bit_ZMM0_15_state | bit_ZMM16_31_state))
 	    {
-	      os_vector_size |= os_zmm;
+	      CPU_FEATURE_SET_ACTIVE (cpu_features, AVX10);
 	      /* Determine if AVX512F is usable.  */
 	      if (CPU_FEATURES_CPU_P (cpu_features, AVX512F))
 		{
@@ -276,15 +268,16 @@ update_active (struct cpu_features *cpu_features)
 	       cpu_features->features[CPUID_INDEX_24_ECX_1].cpuid.ecx,
 	       cpu_features->features[CPUID_INDEX_24_ECX_1].cpuid.edx);
 
-	  if (CPU_FEATURES_CPU_P (cpu_features, AVX10))
+	  if (CPU_FEATURE_ACTIVE_P (cpu_features, AVX10))
 	    {
 	      CPU_FEATURE_SET_ACTIVE (cpu_features, AVX10_VERSION);
-	      if (os_vector_size & os_xmm)
-		CPU_FEATURE_SET_ACTIVE (cpu_features, AVX10_XMM);
-	      if (os_vector_size & os_ymm)
-		CPU_FEATURE_SET_ACTIVE (cpu_features, AVX10_YMM);
-	      if (os_vector_size & os_zmm)
-		CPU_FEATURE_SET_ACTIVE (cpu_features, AVX10_ZMM);
+	      /* NB: These feature bits were from the earlier version of
+		 AVX10 specification.  All processors supporting Intel
+		 AVX10 support for all vector lengths.  These bits are
+		 reserved now and should be 1.  */
+	      CPU_FEATURE_SET_ACTIVE (cpu_features, AVX10_XMM);
+	      CPU_FEATURE_SET_ACTIVE (cpu_features, AVX10_YMM);
+	      CPU_FEATURE_SET_ACTIVE (cpu_features, AVX10_ZMM);
 	    }
 	}
 
