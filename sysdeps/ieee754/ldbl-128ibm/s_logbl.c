@@ -19,6 +19,8 @@
  */
 
 #include <math.h>
+#include <errno.h>
+#include <math-barriers.h>
 #include <math_private.h>
 #include <math_ldbl_opt.h>
 #include <fix-int-fp-convert-zero.h>
@@ -34,7 +36,11 @@ __logbl (long double x)
   hxs = hx;
   hx &= 0x7fffffffffffffffLL;	/* high |x| */
   if (hx == 0)
-    return -1.0 / fabs (x);
+    {
+      /* Pole error: logbl (+-0).  */
+      __set_errno (ERANGE);
+      return math_opt_barrier (-1.0) / fabs (x);
+    }
   if (hx >= 0x7ff0000000000000LL)
     return x * x;
   if (__glibc_unlikely ((rhx = hx >> 52) == 0))

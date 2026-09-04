@@ -20,11 +20,15 @@
 #include <math_private.h>
 #include <libm-alias-double.h>
 #include <fix-int-fp-convert-zero.h>
+#include "math_config.h"
 
 double
 __logb (double x)
 {
 #if USE_LOGB_BUILTIN
+  if (__glibc_unlikely (x == 0))
+    /* Pole error: logb (+-0).  */
+    return __math_divzero (1);
   return __builtin_logb (x);
 #else
   int64_t ix, ex;
@@ -32,7 +36,8 @@ __logb (double x)
   EXTRACT_WORDS64 (ix, x);
   ix &= UINT64_C(0x7fffffffffffffff);
   if (ix == 0)
-    return -1.0 / fabs (x);
+    /* Pole error: logb (+-0).  */
+    return __math_divzero (1);
   ex = ix >> 52;
   if (ex == 0x7ff)
     return x * x;

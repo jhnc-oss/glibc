@@ -669,7 +669,8 @@ due to intermediate rounding.
 If @var{x} is de-normalized, @code{logb} returns the exponent @var{x}
 would have if it were normalized.  If @var{x} is infinity (positive or
 negative), @code{logb} returns @math{@infinity{}}.  If @var{x} is zero,
-@code{logb} returns @math{@infinity{}}.  It does not signal.
+a pole error occurs: @code{logb} raises the divide-by-zero exception,
+sets @code{errno} to @code{ERANGE} and returns @math{-@infinity{}}.
 @end deftypefun
 
 @deftypefun int ilogb (double @var{x})

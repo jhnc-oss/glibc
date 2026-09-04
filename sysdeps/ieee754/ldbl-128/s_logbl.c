@@ -23,6 +23,8 @@ static char rcsid[] = "$NetBSD: $";
  */
 
 #include <math.h>
+#include <errno.h>
+#include <math-barriers.h>
 #include <math_private.h>
 #include <libm-alias-ldouble.h>
 
@@ -30,6 +32,12 @@ _Float128
 __logbl (_Float128 x)
 {
 #if USE_LOGBL_BUILTIN
+  if (__glibc_unlikely (x == 0))
+    {
+      /* Pole error: logbl (+-0).  */
+      __set_errno (ERANGE);
+      return math_opt_barrier (-1.0) / fabsl (x);
+    }
   return __builtin_logbl (x);
 #else
   /* Use generic implementation.  */
@@ -38,7 +46,11 @@ __logbl (_Float128 x)
   GET_LDOUBLE_WORDS64 (hx, lx, x);
   hx &= 0x7fffffffffffffffLL;	/* high |x| */
   if ((hx | lx) == 0)
-    return -1.0 / fabsl (x);
+    {
+      /* Pole error: logbl (+-0).  */
+      __set_errno (ERANGE);
+      return math_opt_barrier (-1.0) / fabsl (x);
+    }
   if (hx >= 0x7fff000000000000LL)
     return x * x;
   if ((ex = hx >> 48) == 0)	/* IEEE 754 logb */

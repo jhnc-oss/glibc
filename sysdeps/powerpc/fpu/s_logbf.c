@@ -22,6 +22,8 @@
 # include <sysdeps/ieee754/flt-32/s_logbf.c>
 #else
 # include <math.h>
+# include <errno.h>
+# include <math-barriers.h>
 # include <libm-alias-float.h>
 /* This implementation avoids FP to INT conversions by using VSX
    bitwise instructions over FP values.  */
@@ -32,8 +34,11 @@ __logbf (float x)
   double ret;
 
   if (__glibc_unlikely (x == 0.0))
-    /* Raise FE_DIVBYZERO and return -HUGE_VAL[LF].  */
-    return -1.0 / fabs (x);
+    {
+      /* Pole error: raise FE_DIVBYZERO, set errno and return -HUGE_VALF.  */
+      __set_errno (ERANGE);
+      return math_opt_barrier (-1.0) / fabs (x);
+    }
 
   /* mask to extract the exponent.  */
   asm ("xxland %x0,%x1,%x2\n"

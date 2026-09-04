@@ -22,6 +22,8 @@
 # include <sysdeps/ieee754/dbl-64/s_logb.c>
 #else
 # include <math.h>
+# include <errno.h>
+# include <math-barriers.h>
 # include <math_private.h>
 # include <math_ldbl_opt.h>
 # include <libm-alias-double.h>
@@ -34,8 +36,11 @@ __logb (double x)
   double ret;
 
   if (__glibc_unlikely (x == 0.0))
-    /* Raise FE_DIVBYZERO and return -HUGE_VAL[LF].  */
-    return -1.0 / fabs (x);
+    {
+      /* Pole error: raise FE_DIVBYZERO, set errno and return -HUGE_VAL.  */
+      __set_errno (ERANGE);
+      return math_opt_barrier (-1.0) / fabs (x);
+    }
 
   /* Mask to extract the exponent.  */
   asm ("xxland %x0,%x1,%x2\n"

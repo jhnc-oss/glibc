@@ -22,6 +22,8 @@
 # include <./sysdeps/ieee754/ldbl-128ibm/s_logbl.c>
 #else
 # include <math.h>
+# include <errno.h>
+# include <math-barriers.h>
 # include <math_private.h>
 # include <math_ldbl_opt.h>
 
@@ -35,8 +37,11 @@ __logbl (long double x)
   int64_t hx;
 
   if (__glibc_unlikely (x == 0.0))
-    /* Raise FE_DIVBYZERO and return -HUGE_VAL[LF].  */
-    return -1.0L / __builtin_fabsl (x);
+    {
+      /* Pole error: raise FE_DIVBYZERO, set errno and return -HUGE_VALL.  */
+      __set_errno (ERANGE);
+      return math_opt_barrier (-1.0L) / __builtin_fabsl (x);
+    }
 
   ldbl_unpack (x, &xh, &xl);
   EXTRACT_WORDS64 (hx, xh);

@@ -19,6 +19,8 @@
  */
 
 #include <math.h>
+#include <errno.h>
+#include <math-barriers.h>
 #include <math_private.h>
 
 long double
@@ -29,7 +31,11 @@ __logbl (long double x)
   GET_LDOUBLE_WORDS (es, ix, lx, x);
   es &= 0x7fff;			/* exponent */
   if ((es | ix | lx) == 0)
-    return -1.0 / fabsl (x);
+    {
+      /* Pole error: logbl (+-0).  */
+      __set_errno (ERANGE);
+      return math_opt_barrier (-1.0) / fabsl (x);
+    }
   if (es == 0x7fff)
     return x * x;
   if (es == 0)			/* IEEE 754 logb */

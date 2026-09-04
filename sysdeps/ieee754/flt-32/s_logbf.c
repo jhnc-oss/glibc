@@ -16,11 +16,15 @@
 #include <math_private.h>
 #include <libm-alias-float.h>
 #include <fix-int-fp-convert-zero.h>
+#include "math_config.h"
 
 float
 __logbf (float x)
 {
 #if USE_LOGBF_BUILTIN
+  if (__glibc_unlikely (x == 0))
+    /* Pole error: logbf (+-0).  */
+    return __math_divzerof (1);
   return __builtin_logbf (x);
 #else
   int32_t ix, rix;
@@ -28,7 +32,8 @@ __logbf (float x)
   GET_FLOAT_WORD (ix, x);
   ix &= 0x7fffffff;		/* high |x| */
   if (ix == 0)
-    return (float) -1.0 / fabsf (x);
+    /* Pole error: logbf (+-0).  */
+    return __math_divzerof (1);
   if (ix >= 0x7f800000)
     return x * x;
   if (__glibc_unlikely ((rix = ix >> 23) == 0))
