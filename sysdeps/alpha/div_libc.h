@@ -79,15 +79,15 @@
 #define FRAME	64
 
 /* Code fragment to generate an integer divide-by-zero fault.  When
-   building libc.so, we arrange for there to be one copy of this code
-   placed late in the dso, such that all branches are forward.  When
-   building libc.a, we use multiple copies to avoid having an out of
-   range branch.  Users should jump to DIVBYZERO.  */
+   building libc.so, we arrange for there to be one copy of this code,
+   shared by all the divide routines via a comdat group.  When building
+   libc.a, we use multiple copies to avoid having an out of range branch.
+   Users should jump to DIVBYZERO.  */
 
 .macro DO_DIVBYZERO
 #ifdef PIC
 #define DIVBYZERO	__divbyzero
-	.section .gnu.linkonce.t.divbyzero, "ax", @progbits
+	.section .text.__divbyzero, "axG", @progbits, __divbyzero, comdat
 	.globl	__divbyzero
 	.type	__divbyzero, @function
 	.usepv	__divbyzero, no
