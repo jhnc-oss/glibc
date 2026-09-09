@@ -1352,10 +1352,19 @@ __strftime_internal (CHAR_T *s, size_t maxsize, const CHAR_T *format,
                 if (len < w)
                   {
                     size_t delta = w - len;
-                    __wmemmove (p + delta, p, len);
+                    if (to_lowcase)
+		      memcpy_lowcase (p + delta, p, len LOCALE_ARG);
+		    else if (to_uppcase)
+		      memcpy_uppcase (p + delta, p, len LOCALE_ARG);
+		    else
+		      __wmemmove (p + delta, p, len);
                     wchar_t wc = pad == L_('0') || pad == L_('+') ? L'0' : L' ';
                     wmemset (p, wc, delta);
                   }
+		else if (to_lowcase)
+		  memcpy_lowcase (p, p, len LOCALE_ARG);
+		else if (to_uppcase)
+		  memcpy_uppcase (p, p, len LOCALE_ARG);
                 p += incr;
               }
             i += incr;

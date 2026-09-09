@@ -1,3 +1,4 @@
+#include <libc-diag.h>
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -121,6 +122,44 @@ do_test (void)
     }
   else
     printf ("got \"%s\"\n", buf);
+
+  tm.tm_zone = "Zz";
+
+  /* GCC complains about using a width below with %Z, but it is supported
+     in the glibc implementation.  */
+  DIAG_PUSH_NEEDS_COMMENT;
+  DIAG_IGNORE_NEEDS_COMMENT (0, "-Wformat");
+
+  if (strftime (buf, sizeof (buf), "%Z %^Z %#Z %^4Z %#4Z", &tm) == 0)
+    {
+      puts ("strftime failed");
+      result = 1;
+    }
+  else if (strcmp (buf, "Zz ZZ zz   ZZ   zz") != 0)
+    {
+      printf ("strftime: expected \"%s\", got \"%s\"\n",
+	      "Zz ZZ zz   ZZ   zz", buf);
+      result = 1;
+    }
+  else
+    printf ("got \"%s\"\n", buf);
+
+  if (wcsftime (wbuf, sizeof (wbuf) / sizeof (wbuf[0]),
+		L"%Z %^Z %#Z %^4Z %#4Z", &tm) == 0)
+    {
+      puts ("wcsftime failed");
+      result = 1;
+    }
+  else if (wcscmp (wbuf, L"Zz ZZ zz   ZZ   zz") != 0)
+    {
+      printf ("wcsftime: expected \"%ls\", got \"%ls\"\n",
+	      L"Zz ZZ zz   ZZ   zz", wbuf);
+      result = 1;
+    }
+  else
+    printf ("got \"%ls\"\n", wbuf);
+
+  DIAG_POP_NEEDS_COMMENT;
 
   return result;
 }
